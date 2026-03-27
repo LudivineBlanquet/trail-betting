@@ -34,8 +34,6 @@ def afficher_bandeau_connexion() -> None:
     if st.session_state.get("authentifie"):
         return
 
-    st.sidebar.info("***Bienvenue !*** &nbsp; Connecte-toi ou crée un compte.")
-
 
 def afficher_utilisateur_connecte() -> None:
     """
@@ -152,13 +150,29 @@ def main() -> None:
 
     st.markdown(
         """
-        <div style="font-size: 25px; font-weight: bold; font-family: system-ui; text-align: center">
-        Mon compte
+        <div style="
+            background-color: #D20606;
+            border-radius: 8px;
+            padding: 6px 24px;
+            width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        ">
+            <span style="
+                font-size: 20px;
+                font-weight: bold;
+                font-family: system-ui;
+                color: white;
+                letter-spacing: 1px;
+            ">
+                MON COMPTE
+            </span>
         </div>
         """,
-        unsafe_allow_html = True
+        unsafe_allow_html=True
     )
-    add_vertical_space(1)
+
+    add_vertical_space(3)
 
     if st.session_state.get("authentifie"):
         afficher_utilisateur_connecte()

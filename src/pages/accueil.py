@@ -65,12 +65,16 @@ def afficher_cartes_navigation() -> None:
 
     img_courses = get_image_base64("src/assets/images/utmb_index.png")
     img_classement = get_image_base64("src/assets/images/duc-army-logo.webp")
+    img_compte = get_image_base64("src/assets/images/mountain-running-silhouette.png")
 
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+
+    col1, col2, col3, col4, col5 = st.columns([0.5, 1, 1, 1,0.5])
     with col2:
         carte_redirection_page(page = "Courses", image = img_courses, titre = "Courses à venir et paris")
     with col3:
         carte_redirection_page(page = "Classement", image = img_classement, titre = "Classement des soldats du Duc")
+    with col4:
+        carte_redirection_page(page = "Mon compte", image = img_compte, titre = "Connexion à mon compte")
 
 
 def afficher_derniers_resultats() -> None:

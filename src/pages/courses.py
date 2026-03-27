@@ -265,13 +265,30 @@ def main() -> None:
 
     st.markdown(
         """
-        <div style="font-size: 25px; font-weight: bold; font-family: system-ui; text-align: center">
-        Courses à venir
+        <div style="
+            background-color: #D20606;
+            border-radius: 8px;
+            padding: 6px 24px;
+            width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        ">
+            <span style="
+                font-size: 20px;
+                font-weight: bold;
+                font-family: system-ui;
+                color: white;
+                letter-spacing: 1px;
+            ">
+                COURSES À VENIR
+            </span>
         </div>
         """,
-        unsafe_allow_html = True
+        unsafe_allow_html=True
     )
-    add_vertical_space(1)
+
+
+    add_vertical_space(2)
 
     # Chargement des courses
     df_courses = get_courses_a_venir()
@@ -286,7 +303,7 @@ def main() -> None:
         col1.markdown(
             f"""
             <div style="font-size: 15px; font-family: system-ui; margin-bottom: 0px">
-            ➤ &nbsp; <span style="font-style: italic">{evenement}</span>
+            ➤ &nbsp; <span style="font-weight: bold ;font-style: italic">{evenement}</span>
             </div>
             """,
             unsafe_allow_html = True

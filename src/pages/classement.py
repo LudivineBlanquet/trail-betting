@@ -144,12 +144,15 @@ def afficher_classement_general() -> None:
 
     st.markdown(
         f"""
-        <div style="font-size: 16px; font-weight: bold; font-style:oblique; font-family: system-ui; margin-bottom: 8px; color: #D20606">
+        <div style="font-size: 16px; font-weight: bold; font-family: system-ui; margin-bottom: 8px; color: #000000">
         Classement général :
         </div>
         """,
         unsafe_allow_html = True
     )
+    
+    add_vertical_space(1)
+
 
     df = get_classement_general()
     if df.empty:
@@ -199,12 +202,29 @@ def main() -> None:
 
     st.markdown(
         """
-        <div style="font-size: 25px; font-weight: bold; font-family: system-ui; text-align: center">
-        Classement
+        <div style="
+            background-color: #D20606;
+            border-radius: 8px;
+            padding: 6px 24px;
+            width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        ">
+            <span style="
+                font-size: 20px;
+                font-weight: bold;
+                font-family: system-ui;
+                color: white;
+                letter-spacing: 1px;
+            ">
+                CLASSEMENT DES SOLDATS
+            </span>
         </div>
         """,
-        unsafe_allow_html = True
+        unsafe_allow_html=True
     )
+
+
     add_vertical_space(2)
 
     # Classement général (visible par tous)
