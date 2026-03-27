@@ -154,7 +154,8 @@ def main() -> None:
             background-color: #D20606;
             border-radius: 8px;
             padding: 6px 24px;
-            width: 500px;
+            width: 90%;
+            max-width: 500px;  
             margin: 0 auto;
             text-align: center;
         ">
