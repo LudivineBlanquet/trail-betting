@@ -51,6 +51,7 @@ def afficher_hero() -> None:
         """,
         unsafe_allow_html = True
     )
+    add_vertical_space(1)
 
 
 def afficher_cartes_navigation() -> None:
@@ -69,7 +70,7 @@ def afficher_cartes_navigation() -> None:
     with col2:
         carte_redirection_page(page = "Courses", image = img_courses, titre = "Courses à venir et paris")
     with col3:
-        carte_redirection_page(page = "Classement", image = img_classement, titre = "Classement des patriotes")
+        carte_redirection_page(page = "Classement", image = img_classement, titre = "Classement des soldats du Duc")
 
 
 def afficher_derniers_resultats() -> None:

@@ -40,6 +40,15 @@
         font-weight: bold !important;
         font-size: 22px !important;
     }
+    /* Page sélectionnée */
+    [data-testid="stSidebarNavLink"][aria-current="page"] {
+        background-color: #F2F6FC !important;
+    }
+
+    /* Survol */
+    [data-testid="stSidebarNavLink"]:hover {
+        background-color: #E9EBF2 !important;
+    }
 </style>
 <!-- === END: sidebar === -->
 
@@ -47,10 +56,16 @@
 <!-- === START: hero === -->
 <style>
 
+    /* Supprime le padding par défaut de Streamlit en haut de page */
+    .stMainBlockContainer {
+        padding-top: 0rem !important;
+        margin-top: -40px !important;
+    }
+
     /* Conteneur principal du bloc hero */
     .hero {
         text-align: center;
-        padding: 0rem 0rem 2rem;
+        padding: 0rem 0rem 1.5rem;
     }
 
     /* Titre principal */

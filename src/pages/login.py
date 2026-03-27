@@ -18,6 +18,7 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 import streamlit.components.v1 as components
 
 # LOCAL LIBRAIRIES ----------------------
+from src.functions.utils import extraire_bloc_style, render_footer
 from src.components.authentification import dialog_connexion, dialog_inscription, deconnecter
 
 
@@ -48,7 +49,7 @@ def afficher_utilisateur_connecte() -> None:
     st.success(f"Bienvenue sur *Trail Betting* **{pseudo}** !", icon = "✔")
 
     if role == "admin":
-        st.info("Tu as les droits administrateur.", icon = "ℹ")
+        st.info("Tu as les droits administrateur.")
 
     add_vertical_space(1)
 
@@ -144,6 +145,10 @@ def main() -> None:
         - Si connecté : bloc de bienvenue + bouton déconnexion.
         - Si déconnecté : boutons connexion/inscription + bloc info.
     """
+
+    # Injection des styles CSS de la page
+    st.markdown(extraire_bloc_style("footer", "src/assets/styles/styles.html"), unsafe_allow_html = True)
+    render_footer()
 
     st.markdown(
         """

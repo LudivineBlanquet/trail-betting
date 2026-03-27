@@ -204,7 +204,7 @@ def carte_redirection_page(page: str, image: str, titre: str):
     html = f"""
         <div class="card" onclick="goTo('{page}')">
             <img src="data:image/png;base64,{image}" style="width:50%; height:40px; object-fit:contain;">
-            <div style="margin-top: 12px;">
+            <div style="margin-top: 10px;">
                 {titre}
             </div>
         </div>

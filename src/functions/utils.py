@@ -112,3 +112,9 @@ def colorier_rang_favoris(row):
     couleur = couleurs.get(row["Rang"], "")
 
     return [couleur] * len(row)
+
+def code_pays_drapeau(code: str) -> str:
+
+    if not code or len(code) != 2:
+        return None
+    return f"https://flagcdn.com/{code.lower()}.svg"

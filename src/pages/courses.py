@@ -19,7 +19,7 @@ import requests
 import base64
 
 # LOCAL LIBRAIRIES ----------------------
-from src.functions.utils import get_image_base64, formater_date, colorier_rang_favoris
+from src.functions.utils import get_image_base64, formater_date, colorier_rang_favoris, code_pays_drapeau
 from src.db.queries.queries_courses import get_courses_a_venir, get_favoris_par_course
 from src.db.queries.queries_paris import pari_existe, get_pari_par_user_et_course
 from src.functions.paris_dialog import dialog_saisir_pari
@@ -45,7 +45,7 @@ def afficher_favoris(course_id: str, format_course: str) -> None:
         format_course (str) : format UTMB pour choisir l'index pertinent.
     """
 
-    favoris = get_favoris_par_course(course_id, format_course, top_n = 10)
+    favoris = get_favoris_par_course(course_id, format_course, top_n = 40)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -67,6 +67,7 @@ def afficher_favoris(course_id: str, format_course: str) -> None:
             df_affichage["coureur"] = df_affichage["prenom"].str.title() + " " + df_affichage["nom"].str.upper()
             df_affichage["index_utmb_global"] = df_affichage["index_utmb_global"].astype("Int64")
             df_affichage["index_utmb_format"] = df_affichage["index_utmb_format"].astype("Int64")
+            df_affichage["nationalite"] = df_affichage["nationalite"].apply(code_pays_drapeau)
             df_affichage = df_affichage[["rang", "coureur", "nationalite", "index_utmb_global", "index_utmb_format"]
             ].rename(columns = {
                 "rang": "Rang",
@@ -75,7 +76,13 @@ def afficher_favoris(course_id: str, format_course: str) -> None:
                 "index_utmb_global": "Index global",
                 "index_utmb_format": f"Index {format_course}"
             })
-            st.dataframe(df_affichage.style.apply(colorier_rang_favoris, axis = 1), width = 'stretch', hide_index = True)
+            st.dataframe(
+                df_affichage.style.apply(colorier_rang_favoris, axis = 1),
+                hide_index = True,
+                width = 'stretch',
+                height = 280,
+                column_config = {"Nationalité": st.column_config.ImageColumn(label = "Nationalité", width = "small")}
+            )
 
     with col2:
         st.markdown(
@@ -96,6 +103,7 @@ def afficher_favoris(course_id: str, format_course: str) -> None:
             df_affichage["coureuse"] = df_affichage["prenom"] + " " + df_affichage["nom"].str.upper()
             df_affichage["index_utmb_global"] = df_affichage["index_utmb_global"].astype("Int64")
             df_affichage["index_utmb_format"] = df_affichage["index_utmb_format"].astype("Int64")
+            df_affichage["nationalite"] = df_affichage["nationalite"].apply(code_pays_drapeau)
             df_affichage = df_affichage[["rang", "coureuse", "nationalite", "index_utmb_global", "index_utmb_format"]
             ].rename(columns = {
                 "rang": "Rang",
@@ -104,7 +112,13 @@ def afficher_favoris(course_id: str, format_course: str) -> None:
                 "index_utmb_global": "Index global",
                 "index_utmb_format": f"Index {format_course}"
             })
-            st.dataframe(df_affichage.style.apply(colorier_rang_favoris, axis = 1), width = 'stretch', hide_index = True)
+            st.dataframe(
+                df_affichage.style.apply(colorier_rang_favoris, axis = 1),
+                hide_index = True,
+                width = 'stretch',
+                height = 280,
+                column_config = {"Nationalité": st.column_config.ImageColumn(label = "Nationalité", width = "small")}
+            )
 
 
 def afficher_avis_expert(avis_expert: str | None) -> None:
@@ -212,13 +226,13 @@ def afficher_volet_course(course: dict) -> None:
             # Top 10 favoris
             afficher_favoris(course["id"], course["format"])
 
-        col1, col2, col3, col4 = st.columns([0.3, 0.3, 0.3, 1])
-        # Avis du Duc
+        col1, col2, col3, col4 = st.columns([0.25, 0.5, 0.25, 1])
+        # Bouton pari
         with col2:
             add_vertical_space(1)
             afficher_bouton_pari(course)
 
-        # Bouton pari
+        # Avis du Duc
         with col4:
             # CONTAINER AVIS DU DUC
             with stylable_container(
@@ -271,8 +285,8 @@ def main() -> None:
         col1, col2 = st.columns([6, 1])
         col1.markdown(
             f"""
-            <div style="font-size: 15px; font-family: system-ui; margin-bottom: 8px">
-            ◼ &nbsp; <span style="font-style: italic">{evenement}</span>
+            <div style="font-size: 15px; font-family: system-ui; margin-bottom: 0px">
+            ➤ &nbsp; <span style="font-style: italic">{evenement}</span>
             </div>
             """,
             unsafe_allow_html = True
@@ -281,14 +295,17 @@ def main() -> None:
         image_url = df_courses[df_courses["evenement"] == evenement]["image_url"].iloc[0]
         with col2:
             if image_url:
+                content_type = "image/svg+xml" if image_url.endswith(".svg") else "image/png"
                 img_data = base64.b64encode(requests.get(image_url).content).decode()
-                style = "width:100px; height:50px; margin-bottom: 10px;"
+                style = "width:100px; height:50px; object-fit:contain; margin-bottom: 0px;"
+
             else:
+                content_type = "image/png"
                 img_data = get_image_base64("src/assets/images/utmb_index.png")
                 style = "width:100px; height:auto; margin-bottom: 15px;"
             
             st.markdown(
-                f'<img src="data:image/png;base64,{img_data}" style="{style}">',
+                f'<img src="data:{content_type};base64,{img_data}" style="{style}">',
                 unsafe_allow_html = True
             )
 
