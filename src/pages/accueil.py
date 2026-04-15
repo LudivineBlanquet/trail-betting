@@ -17,7 +17,6 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 # LOCAL LIBRAIRIES ----------------------
 from src.functions.utils import extraire_bloc_style, get_image_base64, render_footer, formater_date
 from src.components.navigation import carte_redirection_page
-from src.db.queries.queries_resultats import get_derniers_resultats
 
 # Dictionnaire de mapping format → image
 FORMAT_IMAGES = {
@@ -29,6 +28,7 @@ FORMAT_IMAGES = {
 
 
 # COMPOSANTS INTERNES
+# ---------------------------------------------------------------------------
 def afficher_hero() -> None:
     """
     Affiche le bloc hero de la page d'accueil.
@@ -77,52 +77,6 @@ def afficher_cartes_navigation() -> None:
         carte_redirection_page(page = "Mon compte", image = img_compte, titre = "Connexion à mon compte")
 
 
-def afficher_derniers_resultats() -> None:
-    """
-    Affiche un bloc récapitulatif des derniers résultats publiés.
-
-    Récupère les 5 dernières courses dont les résultats sont disponibles et les affiche sous forme de tableau stylisé.
-    Le bloc est masqué si aucun résultat n'est encore disponible.
-    """
-
-    df = get_derniers_resultats(limit = 5)
-    if df.empty:
-        return
-
-    add_vertical_space(3)
-    st.markdown(
-        """
-        <div style="font-size: 16px; font-style: italic">
-        Derniers résultats disponibles...
-        </div>
-        """,
-        unsafe_allow_html = True
-    )
-    add_vertical_space(1)
-
-    df["course_format"] = df["course_format"].map(lambda format: f"data:image/png;base64,{get_image_base64(FORMAT_IMAGES[format])}"
-        if format in FORMAT_IMAGES else format)
-
-    # Renommage des colonnes pour l'affichage
-    df_affichage = df.rename(columns = {
-        "date_course": "Date",
-        "course_evt": "Evénement",
-        "course_nom": "Course",
-        "course_format": "Format",
-        "homme_1er": "1er Homme",
-        "femme_1ere": "1ère Femme",
-    }).drop(columns = ["saisi_at"])
-    df_affichage["Date"] = df_affichage["Date"].apply(formater_date)
-
-    st.dataframe(df_affichage, width = 'stretch', hide_index = True,
-        column_config = {
-            "Format": st.column_config.ImageColumn(
-                label = "Format"
-            )
-        }
-    )
-
-
 # MAIN
 def main() -> None:
     """
@@ -147,7 +101,3 @@ def main() -> None:
 
     # Cartes de navigation
     afficher_cartes_navigation()
-
-    # Derniers résultats
-    afficher_derniers_resultats()
-

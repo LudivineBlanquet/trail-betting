@@ -178,7 +178,8 @@ def insert_course(
     denivele: float,
     lieu: str,
     date_course: str,
-    avis_expert: str = None
+    avis_expert: str = None,
+    image_url: str = None
 ) -> dict | None:
     """
     Insère une nouvelle course dans la base de données.
@@ -194,6 +195,7 @@ def insert_course(
         lieu (str) : lieu de la course.
         date_course (str) : date au format 'YYYY-MM-DD'.
         avis_expert (str | None) : analyse du Duc (optionnelle à la création).
+        image_url (str | None) : URL d'un logo de la course (optionnelle à la création).
 
     Retourne :
         dict | None : données de la course créée (avec son UUID généré), ou None en cas d'erreur.
@@ -213,6 +215,7 @@ def insert_course(
                 "lieu": lieu,
                 "date_course": date_course,
                 "avis_expert": avis_expert,
+                "image_url": image_url,
                 "resultats_publies": False
             })
             .execute()

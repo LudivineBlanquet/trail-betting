@@ -113,6 +113,19 @@ def colorier_rang_favoris(row):
 
     return [couleur] * len(row)
 
+
+def format_rang(r):
+
+    if r == 1:
+        return "🥇 1"
+    elif r == 2:
+        return "🥈 2"
+    elif r == 3:
+        return "🥉 3"
+    else:
+        return str(r)
+
+
 def code_pays_drapeau(code: str) -> str:
 
     if not code or len(code) != 2:

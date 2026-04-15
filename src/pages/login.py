@@ -170,10 +170,9 @@ def main() -> None:
             </span>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html = True
     )
-
-    add_vertical_space(3)
+    add_vertical_space(2)
 
     if st.session_state.get("authentifie"):
         afficher_utilisateur_connecte()

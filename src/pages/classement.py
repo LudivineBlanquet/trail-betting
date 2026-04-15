@@ -16,7 +16,7 @@ from streamlit_extras.stylable_container import stylable_container
 import plotly.express as px
 
 # LOCAL LIBRAIRIES ----------------------
-from src.functions.utils import get_image_base64, formater_date
+from src.functions.utils import get_image_base64, formater_date, format_rang
 from src.db.queries.queries_classement import get_classement_general, get_stats_par_user, get_historique_points_user
 
 # Dictionnaire de mapping format → image
@@ -162,6 +162,9 @@ def afficher_classement_general() -> None:
     # Sélection et renommage des colonnes pour l'affichage
     df_affichage = df[["rang", "pseudo", "points_total", "nb_paris_scores", "nb_paris", "taux_reussite"]]
 
+    # Formatage du rang pour le podium
+    df_affichage["rang"] = df_affichage["rang"].apply(format_rang)
+
     # Formatage du nombre de paris : "3 / 5"
     df_affichage["paris"] = (df_affichage["nb_paris_scores"].astype(str) + " / " + df_affichage["nb_paris"].astype(str))
 
@@ -222,10 +225,8 @@ def main() -> None:
             </span>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html = True
     )
-
-
     add_vertical_space(2)
 
     # Classement général (visible par tous)

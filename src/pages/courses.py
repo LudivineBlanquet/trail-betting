@@ -17,12 +17,14 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.stylable_container import stylable_container
 import requests
 import base64
+from datetime import datetime, date
 
 # LOCAL LIBRAIRIES ----------------------
 from src.functions.utils import get_image_base64, formater_date, colorier_rang_favoris, code_pays_drapeau
 from src.db.queries.queries_courses import get_courses_a_venir, get_favoris_par_course
 from src.db.queries.queries_paris import pari_existe, get_pari_par_user_et_course
 from src.functions.paris_dialog import dialog_saisir_pari
+from src.db.queries.queries_resultats import get_derniers_resultats
 
 # Dictionnaire de mapping format → image
 FORMAT_IMAGES = {
@@ -35,6 +37,51 @@ FORMAT_IMAGES = {
 
 # COMPOSANTS INTERNES
 # ---------------------------------------------------------------------------
+def afficher_derniers_resultats() -> None:
+    """
+    Affiche un bloc récapitulatif des derniers résultats publiés.
+
+    Récupère les 5 dernières courses dont les résultats sont disponibles et les affiche sous forme de tableau stylisé.
+    Le bloc est masqué si aucun résultat n'est encore disponible.
+    """
+
+    df = get_derniers_resultats(limit = 5)
+    if df.empty:
+        return
+
+    st.markdown(
+        """
+        <div style="font-size: 16px; font-style: italic">
+        Derniers résultats disponibles...
+        </div>
+        """,
+        unsafe_allow_html = True
+    )
+    add_vertical_space(1)
+
+    df["course_format"] = df["course_format"].map(lambda format: f"data:image/png;base64,{get_image_base64(FORMAT_IMAGES[format])}"
+        if format in FORMAT_IMAGES else format)
+
+    # Renommage des colonnes pour l'affichage
+    df_affichage = df.rename(columns = {
+        "date_course": "Date",
+        "course_evt": "Evénement",
+        "course_nom": "Course",
+        "course_format": "Format",
+        "homme_1er": "1er Homme",
+        "femme_1ere": "1ère Femme",
+    }).drop(columns = ["saisi_at"])
+    df_affichage["Date"] = df_affichage["Date"].apply(formater_date)
+
+    st.dataframe(df_affichage, width = 'stretch', hide_index = True,
+        column_config = {
+            "Format": st.column_config.ImageColumn(
+                label = "Format"
+            )
+        }
+    )
+
+
 def afficher_favoris(course_id: str, format_course: str) -> None:
     """
     Affiche le top 10 des favoris hommes et femmes pour une course.
@@ -141,7 +188,7 @@ def afficher_avis_expert(avis_expert: str | None) -> None:
             unsafe_allow_html = True
         )
     else:
-        st.caption("L'avis de ton souverain n'est pas encore disponible pour cette course.")
+        st.caption("La sainte parole de ton souverain n'est pas encore disponible pour cette course.")
 
 
 def afficher_bouton_pari(course: dict) -> None:
@@ -164,7 +211,9 @@ def afficher_bouton_pari(course: dict) -> None:
     a_deja_parie = pari_existe(st.session_state["user_id"], course["id"])
     label_bouton = "Modifier mon pari" if a_deja_parie else "Saisir un pari"
 
-    if st.button(label_bouton, key = f"btn_pari_{course['id']}", type = 'primary'):
+    print(date.today())
+    date_course = datetime.strptime(course["date_course"], "%Y-%m-%d").date()
+    if st.button(label_bouton, key = f"btn_pari_{course['id']}", type = 'primary', disabled = date.today() >= date_course):
         # Récupération du pari existant pour pré-remplissage éventuel
         pari_existant = get_pari_par_user_et_course(st.session_state["user_id"], course["id"]) if a_deja_parie else None
         dialog_saisir_pari(course = course, pari_existant = pari_existant)
@@ -240,7 +289,7 @@ def afficher_volet_course(course: dict) -> None:
                 css_styles = """
                     {
                         border-radius: 0.5rem;
-                        background-color: #E8FFEE;
+                        background-color: #F8EBFA;
                         border: 1px solid rgba(49, 51, 63, 0.2);
                         border-color: #D20606;
                         padding: 10px 10px 11px;
@@ -254,13 +303,9 @@ def afficher_volet_course(course: dict) -> None:
 # ---------------------------------------------------------------------------
 def main() -> None:
     """
-    Fonction principale de la page courses à venir.
-
-    Orchestre l'affichage :
-        1. Injection des styles CSS.
-        2. Titre de la page.
-        3. Message si aucune course à venir.
-        4. Un volet dépliable par course à venir.
+    Fonction principale de la page courses à venir qui présente :
+        - Un tableau des derniers résultats disponibles.
+        - Un volet dépliable par course à venir.
     """
 
     st.markdown(
@@ -285,16 +330,18 @@ def main() -> None:
             </span>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html = True
     )
-
-
     add_vertical_space(2)
+
+    # Derniers résultats
+    afficher_derniers_resultats()
+    add_vertical_space(1)
 
     # Chargement des courses
     df_courses = get_courses_a_venir()
     if df_courses.empty:
-        st.info("Aucune course à venir pour le moment. Reviens vendredi pour les prochaines annonces !")
+        st.info("Aucune course à venir pour le moment... Reviens bientôt pour les prochaines annonces !")
         return
 
     # Affichage groupé par événement
@@ -330,4 +377,3 @@ def main() -> None:
         df_evenement = df_courses[df_courses["evenement"].fillna("Autres courses") == evenement]
         for _, course in df_evenement.iterrows():
             afficher_volet_course(course.to_dict())
-        add_vertical_space(2)
