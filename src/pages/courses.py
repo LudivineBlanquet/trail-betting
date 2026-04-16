@@ -25,6 +25,7 @@ from src.db.queries.queries_courses import get_courses_a_venir, get_favoris_par_
 from src.db.queries.queries_paris import pari_existe, get_pari_par_user_et_course
 from src.functions.paris_dialog import dialog_saisir_pari
 from src.db.queries.queries_resultats import get_derniers_resultats
+from src.db.connection import get_supabase_client
 
 # Dictionnaire de mapping format → image
 FORMAT_IMAGES = {
@@ -211,7 +212,6 @@ def afficher_bouton_pari(course: dict) -> None:
     a_deja_parie = pari_existe(st.session_state["user_id"], course["id"])
     label_bouton = "Modifier mon pari" if a_deja_parie else "Saisir un pari"
 
-    print(date.today())
     date_course = datetime.strptime(course["date_course"], "%Y-%m-%d").date()
     if st.button(label_bouton, key = f"btn_pari_{course['id']}", type = 'primary', disabled = date.today() >= date_course):
         # Récupération du pari existant pour pré-remplissage éventuel
@@ -299,6 +299,28 @@ def afficher_volet_course(course: dict) -> None:
                 afficher_avis_expert(course.get("avis_expert"))
 
 
+@st.dialog("Proposer une course")
+def afficher_suggestion_course() -> None:
+    """
+    Affiche un formulaire permettant à l'utilisateur de proposer une course manquante.
+    """
+
+    nom_course = st.text_input("Nom de la course")
+    url = st.text_input("Lien vers la liste des participants (optionnel)")
+
+    col1, col2, col3 = st.columns([1, 1, 1])
+    if col2.button("Envoyer", type = "primary", use_container_width = True):
+        if not nom_course:
+            st.warning("Merci de renseigner le nom de la course.", icon = "⚠")
+        else:
+            supabase = get_supabase_client()
+            supabase.table("courses_suggestions").insert({
+                "nom_course": nom_course,
+                "url_participants": url
+            }).execute()
+            st.success("Merci ! On va regarder ça...", icon = "✔")
+
+
 # MAIN
 # ---------------------------------------------------------------------------
 def main() -> None:
@@ -306,6 +328,7 @@ def main() -> None:
     Fonction principale de la page courses à venir qui présente :
         - Un tableau des derniers résultats disponibles.
         - Un volet dépliable par course à venir.
+        - Un formulaire de suggestion de course.
     """
 
     st.markdown(
@@ -377,3 +400,7 @@ def main() -> None:
         df_evenement = df_courses[df_courses["evenement"].fillna("Autres courses") == evenement]
         for _, course in df_evenement.iterrows():
             afficher_volet_course(course.to_dict())
+
+    add_vertical_space(2)
+    if st.button("Ta course n'est pas dispo ?", type = 'primary'):
+        afficher_suggestion_course()

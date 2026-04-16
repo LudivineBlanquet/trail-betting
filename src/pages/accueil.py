@@ -40,7 +40,7 @@ def afficher_hero() -> None:
         f"""
         <div style="width: 100%; display: flex; justify-content: center;">
             <div class="hero">
-                <p class="hero-titre">Trail Betting &nbsp; 🗯</p>
+                <p class="hero-titre">Trail Betting 🗯</p>
                 <p class="hero-tagline">Le Betclic du trail running</p>
                 <p class="hero-description">
                     Pronostique les podiums des plus grandes courses de trail, défie tes amis et grimpe au classement.<br>
@@ -68,12 +68,12 @@ def afficher_cartes_navigation() -> None:
     img_compte = get_image_base64("src/assets/images/mountain-running-silhouette.png")
 
 
-    col1, col2, col3, col4, col5 = st.columns([0.5, 1, 1, 1,0.5])
-    with col2:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
         carte_redirection_page(page = "Courses", image = img_courses, titre = "Courses à venir et paris")
-    with col3:
+    with col2:
         carte_redirection_page(page = "Classement", image = img_classement, titre = "Classement des soldats du Duc")
-    with col4:
+    with col3:
         carte_redirection_page(page = "Mon compte", image = img_compte, titre = "Connexion à mon compte")
 
 

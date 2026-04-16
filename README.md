@@ -1,10 +1,7 @@
 # Trail Betting
 
-<<<<<<< HEAD
 L'application a la structure suivante :
 ``` 
-=======
->>>>>>> 3f88afec5c558298c2dd5adf6077a5193a5f3d93
 📦 TRAIL-BETTING
 ├── 📂 .streamlit/
 │   ├── 📄 config.toml

@@ -16,6 +16,7 @@ Ce module est utilisé au niveau principal de l'application (app.py) pour initia
 # LIBRAIRIES ----------------------------
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_extras.add_vertical_space import add_vertical_space
 import yaml
 
 # LOCAL LIBRAIRIES ----------------------------
@@ -134,34 +135,6 @@ def construire_menu(nav: dict, variables: dict) -> dict:
     return menu
 
 
-def set_navigation() :
-    """
-    Définit et exécute la navigation principale de l'application sans gestion de rôles.
-
-    Cette fonction réalise les étapes suivantes :
-    - Chargement de la configuration des pages et crée les objets Page Streamlit.
-    - Affichage éventuel du logo dans la barre latérale.
-    - Lancement de la navigation via st.navigation().
-
-    Returns:
-        None. La navigation est lancée via pg.run() et contrôle le flux de l'application.
-    """
-
-    # Chargement de la configuration et des pages
-    variables, nav = charger_config_et_pages()
-
-    # Affichage du logo sidebar si présent
-    afficher_logo_sidebar(variables.get("LOGO_SIDEBAR"), variables.get("LOGO_LINK", "#"))
-
-    # Bandeau connexion si non authentifié
-    afficher_bandeau_connexion()
-
-    # Construction du menu par section
-    menu = construire_menu(nav, variables)
-
-    pg = st.navigation(menu)        
-    pg.run()
-
 def carte_redirection_page(page: str, image: str, titre: str):
     """
     Crée une carte interactive (image + titre) permettant de rediriger vers une autre page de l'application via un clic utilisateur.
@@ -237,3 +210,126 @@ def carte_redirection_page(page: str, image: str, titre: str):
     """
 
     return components.html(js + html + css, width = None)
+
+
+@st.dialog("Comment ça marche ?", width = 'medium')
+def afficher_bloc_info() -> None:
+    """
+    Affiche un bloc explicatif sur le fonctionnement de l'application.
+    Présente les règles du jeu : comment parier, comment les points sont calculés et quand les résultats sont publiés.
+    """
+
+    components.html(
+        """
+        <style>
+            body, html { margin: 0; padding: 0; }
+        </style>
+        <div style="font-family: system-ui; font-size: 14px; line-height: 1.5;">
+
+            <p style="margin-top: 0;"><strong>Saisi des paris :</strong><br>
+            Pour chaque course à venir, pronostique le podium hommes et femmes parmi les favoris - sélectionnés selon leur index UTMB.</p>
+
+            <p><strong>Système de points :</strong></p>
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #E8FFEE;">
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Pronostic</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Coureur à la bonne place</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">10 pts</td>
+                    </tr>
+                    <tr style="background-color: #F2F6FC;">
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Coureur sur le podium (mais à la mauvaise place)</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">4 pts</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Podium complet dans le bon ordre (H ou F)</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">+5 pts bonus</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Mise à jour hebdomadaire :</strong><br>
+            Chaque vendredi, de nouvelles courses sont ajoutées et l'avis de ton souverain le Duc de Savoie, est publié, pour t'aider à faire tes choix.</p>
+
+            <p><strong>Classement :</strong><br>
+            Les points s'accumulent au fil des courses. Le classement est mis à jour automatiquement après chaque publication de résultats.</p>
+
+        </div>
+        """,
+        height = 400, scrolling = True
+    )
+
+
+@st.dialog("Nous contacter")
+def afficher_contact() -> None:
+    """
+    Affiche un formulaire de contact permettant à l'utilisateur d'envoyer un message par mail.
+    Nécessite la configuration des variables SMTP dans les secrets Streamlit.
+    """
+
+    st.markdown("Une question ou un problème ? Écris-nous !")
+    sujet = st.text_input("Sujet")
+    message = st.text_area("Message", height = 150)
+
+    col1, col2, col3 = st.columns([1, 1, 1])
+    if col2.button("Envoyer", type = "primary", use_container_width = True):
+        if not sujet or not message:
+            st.error("Merci de remplir tous les champs.", icon = "⚠")
+        else:
+            try:
+                import smtplib
+                from email.mime.text import MIMEText
+
+                msg = MIMEText(f"De : {st.session_state.get('user_email', 'inconnu')}\n\n{message}")
+                msg["Subject"] = f"[Trail Betting] {sujet}"
+                msg["From"] = st.secrets["SMTP_USER"]
+                msg["To"] = st.secrets["SMTP_TO"]
+
+                with smtplib.SMTP_SSL("smtp.orange.fr", 465) as server:
+                    server.login(st.secrets["SMTP_USER"], st.secrets["SMTP_PASSWORD"])
+                    server.send_message(msg)
+
+                st.success("Message envoyé ! On te répond au plus vite.", icon = "✔")
+            except Exception as e:
+                st.error(f"Erreur lors de l'envoi : {e}", icon = "✖")
+
+
+def set_navigation() :
+    """
+    Définit et exécute la navigation principale de l'application sans gestion de rôles.
+
+    Cette fonction réalise les étapes suivantes :
+    - Chargement de la configuration des pages et crée les objets Page Streamlit.
+    - Affichage éventuel du logo dans la barre latérale.
+    - Lancement de la navigation via st.navigation().
+
+    Returns:
+        None. La navigation est lancée via pg.run() et contrôle le flux de l'application.
+    """
+
+    # Chargement de la configuration et des pages
+    variables, nav = charger_config_et_pages()
+
+    # Affichage du logo sidebar si présent
+    afficher_logo_sidebar(variables.get("LOGO_SIDEBAR"), variables.get("LOGO_LINK", "#"))
+
+    # Bandeau connexion si non authentifié
+    afficher_bandeau_connexion()
+
+    # Construction du menu par section
+    menu = construire_menu(nav, variables)
+
+    with st.sidebar:
+        add_vertical_space(3)
+        if st.button("➤ &nbsp; Infos", type = 'primary', use_container_width = True):
+            afficher_bloc_info()
+        if st.button("➤ &nbsp; Contact", type = "secondary", use_container_width = True):
+            afficher_contact()
+
+    pg = st.navigation(menu)        
+    pg.run()

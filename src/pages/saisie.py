@@ -71,7 +71,7 @@ def get_toutes_les_courses() -> pd.DataFrame:
         return pd.DataFrame(response.data) if response.data else pd.DataFrame()
 
     except Exception as e:
-        st.error(f"Erreur lors du chargement des courses : {e}")
+        st.error(f"Erreur lors du chargement des courses : {e}", icon = "✖")
         return pd.DataFrame()
 
 
@@ -127,7 +127,7 @@ def onglet_ajouter_course() -> None:
         if not lieu : champs_vides.append("Lieu")
 
         if champs_vides:
-            st.warning(f"Champs obligatoires manquants.", icon = "⚠")
+            st.warning("Champs obligatoires manquants.", icon = "⚠")
             return
 
         # Vérification doublon sur (nom, date_course)
@@ -146,7 +146,7 @@ def onglet_ajouter_course() -> None:
                 st.warning(f"Une course **{nom}** existe déjà à cette date. Vérifie le calendrier avant d'ajouter.", icon = "⚠")
                 return
         except Exception as e:
-            st.error(f"Erreur lors de la vérification des doublons : {e}")
+            st.error(f"Erreur lors de la vérification des doublons : {e}", icon = "✖")
             return
 
         # Insertion
@@ -269,7 +269,7 @@ def insert_participants_reconcilies(course_id: str, participants: list[dict]) ->
         return True
 
     except Exception as e:
-        st.error(f"Erreur lors de l'enregistrement des participants : {e}")
+        st.error(f"Erreur lors de l'enregistrement des participants : {e}", icon = "✖")
         return False
 
 
@@ -314,7 +314,7 @@ def onglet_participants() -> None:
     try:
         df_import = (pd.read_csv(fichier, sep = ";") if fichier.name.endswith(".csv") else pd.read_excel(fichier))
     except Exception as e:
-        st.error(f"Erreur lors de la lecture du fichier : {e}")
+        st.error(f"Erreur lors de la lecture du fichier : {e}", icon = "✖")
         return
 
     # Vérification des colonnes obligatoires
@@ -322,8 +322,7 @@ def onglet_participants() -> None:
     colonnes_manquantes = colonnes_requises - set(df_import.columns)
 
     if colonnes_manquantes:
-        st.error(
-            f"Colonnes manquantes dans le fichier : {', '.join(colonnes_manquantes)}. Les colonnes attendues sont exactement : **Nom**, **Prenom**, **Sexe**.")
+        st.error("Colonnes manquantes dans le fichier. Les colonnes attendues sont exactement : **Nom**, **Prenom**, **Sexe**.", icon = "⚠")
         return
 
     st.success(f"Fichier chargé : **{len(df_import)} lignes** détectées.")
@@ -388,7 +387,7 @@ def get_resultats_bruts(course_id: str) -> dict | None:
         return response.data[0] if response.data else None
 
     except Exception as e:
-        st.error(f"Erreur lors du chargement des résultats : {e}")
+        st.error(f"Erreur lors du chargement des résultats : {e}", icon = "✖")
         return None
 
 
@@ -442,7 +441,7 @@ def onglet_resultats() -> None:
         df_participants = pd.DataFrame(response.data) if response.data else pd.DataFrame()
 
     except Exception as e:
-        st.error(f"Erreur lors du chargement des participants : {e}")
+        st.error(f"Erreur lors du chargement des participants : {e}", icon = "✖")
         return
 
     if df_participants.empty:

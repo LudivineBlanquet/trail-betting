@@ -81,58 +81,6 @@ def afficher_formulaires_auth() -> None:
             dialog_inscription()
 
 
-def afficher_bloc_info() -> None:
-    """
-    Affiche un bloc explicatif sur le fonctionnement de l'application.
-    Présente les règles du jeu : comment parier, comment les points sont calculés et quand les résultats sont publiés.
-    """
-
-    with st.expander("Comment ça marche ?", expanded = False):
-        components.html(
-            """
-            <style>
-                body, html { margin: 0; padding: 0; }
-            </style>
-            <div style="font-family: system-ui; font-size: 14px; line-height: 1.5;">
-
-                <p style="margin-top: 0;"><strong>Saisi des paris :</strong><br>
-                Pour chaque course à venir, pronostique le podium hommes et femmes parmi les favoris sélectionnés selon leur index UTMB.</p>
-
-                <p><strong>Système de points :</strong></p>
-                <table style="width:100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background-color: #E8FFEE;">
-                            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Pronostic</th>
-                            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Points</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Coureur à la bonne place</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">10 pts</td>
-                        </tr>
-                        <tr style="background-color: #F2F6FC;">
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Coureur sur le podium (mais à la mauvaise place)</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">4 pts</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Podium complet dans le bon ordre (H ou F)</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">+5 pts bonus</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <p><strong>Mise à jour hebdomadaire :</strong><br>
-                Chaque vendredi, de nouvelles courses sont ajoutées et l'avis du Duc de Savoie est publié, pour t'aider à faire tes choix.</p>
-
-                <p><strong>Classement :</strong><br>
-                Les points s'accumulent au fil des courses. Le classement est mis à jour automatiquement après chaque publication de résultats.</p>
-
-            </div>
-            """, height = 360
-        )
-
-
 # MAIN
 # ---------------------------------------------------------------------------
 def main() -> None:
@@ -180,4 +128,3 @@ def main() -> None:
     else:
         afficher_formulaires_auth()
         add_vertical_space(2)
-        afficher_bloc_info()
