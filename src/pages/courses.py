@@ -21,6 +21,7 @@ from datetime import datetime, date
 
 # LOCAL LIBRAIRIES ----------------------
 from src.functions.utils import get_image_base64, formater_date, colorier_rang_favoris, code_pays_drapeau
+from src.components.navigation import carte_redirection_page
 from src.db.queries.queries_courses import get_courses_a_venir, get_favoris_par_course
 from src.db.queries.queries_paris import pari_existe, get_pari_par_user_et_course
 from src.functions.paris_dialog import dialog_saisir_pari
@@ -77,7 +78,8 @@ def afficher_derniers_resultats() -> None:
     st.dataframe(df_affichage, width = 'stretch', hide_index = True,
         column_config = {
             "Format": st.column_config.ImageColumn(
-                label = "Format"
+                label = "Format",
+                width = "small"
             )
         }
     )
@@ -305,6 +307,18 @@ def afficher_suggestion_course() -> None:
     Affiche un formulaire permettant à l'utilisateur de proposer une course manquante.
     """
 
+    # Utilisateur non connecté : invitation à se connecter
+    if not st.session_state.get("authentifie"):
+        st.caption("Connecte-toi pour pouvoir nous envoyer ta course.")
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            img_compte = get_image_base64("src/assets/images/mountain-running-silhouette.png")
+            carte_redirection_page(page = "Mon compte", image = img_compte, titre = "Connexion à mon compte")
+        return
+
+    st.caption("⚠ &nbsp; Nous ne pourrons l'ajouter que si la liste des participants est disponible !")
+
     nom_course = st.text_input("Nom de la course")
     url = st.text_input("Lien vers la liste des participants (optionnel)")
 
@@ -402,5 +416,5 @@ def main() -> None:
             afficher_volet_course(course.to_dict())
 
     add_vertical_space(2)
-    if st.button("Ta course n'est pas dispo ?", type = 'primary'):
+    if st.button("Ta course n'est pas dispo &nbsp; ?", type = 'primary'):
         afficher_suggestion_course()

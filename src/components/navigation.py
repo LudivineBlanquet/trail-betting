@@ -87,8 +87,7 @@ def afficher_logo_sidebar(logo_path: str, logo_link: str):
             border-radius: 15px;
             width: 75%;
             display: block;
-            margin-top: 15px;
-            margin-bottom: 30px;
+            margin-top: -10px;
             margin-left: auto;
             margin-right: auto;
         }}
@@ -192,7 +191,7 @@ def carte_redirection_page(page: str, image: str, titre: str):
                 border-radius: 15px;
                 padding: 20px;
                 text-align: center;
-                color: #002060;
+                color: #504b51;
                 font-family: system-ui;
                 font-weight: bold;
                 font-size: 14px;
@@ -272,7 +271,17 @@ def afficher_contact() -> None:
     Nécessite la configuration des variables SMTP dans les secrets Streamlit.
     """
 
-    st.markdown("Une question ou un problème ? Écris-nous !")
+    # Utilisateur non connecté : invitation à se connecter
+    if not st.session_state.get("authentifie"):
+        st.caption("Connecte-toi pour pouvoir nous écrire.")
+
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            img_compte = get_image_base64("src/assets/images/mountain-running-silhouette.png")
+            carte_redirection_page(page = "Mon compte", image = img_compte, titre = "Connexion à mon compte")
+        return
+
+    st.caption("Tu as une question ou un problème ? Écris-nous !")
     sujet = st.text_input("Sujet")
     message = st.text_area("Message", height = 150)
 
@@ -285,7 +294,7 @@ def afficher_contact() -> None:
                 import smtplib
                 from email.mime.text import MIMEText
 
-                msg = MIMEText(f"De : {st.session_state.get('user_email', 'inconnu')}\n\n{message}")
+                msg = MIMEText(f"De : {st.session_state.get('user_email')}\n\n{message}")
                 msg["Subject"] = f"[Trail Betting] {sujet}"
                 msg["From"] = st.secrets["SMTP_USER"]
                 msg["To"] = st.secrets["SMTP_TO"]
@@ -325,10 +334,10 @@ def set_navigation() :
     menu = construire_menu(nav, variables)
 
     with st.sidebar:
-        add_vertical_space(3)
-        if st.button("➤ &nbsp; Infos", type = 'primary', use_container_width = True):
+        col1, col2 = st.columns([1, 1], gap = "xxsmall")
+        if col1.button("Infos", type = 'tertiary', icon = "ℹ"):
             afficher_bloc_info()
-        if st.button("➤ &nbsp; Contact", type = "secondary", use_container_width = True):
+        if col2.button("Contact", type = "tertiary", icon = "✉"):
             afficher_contact()
 
     pg = st.navigation(menu)        

@@ -5,12 +5,9 @@ Ce module regroupe toutes les requêtes relatives aux courses et à leurs partic
 
 Fonctions disponibles :
     - get_courses_a_venir(): liste des courses à venir sans résultats.
-    - get_course_by_id(): détail d'une course par son UUID.
     - get_participants_par_course(): coureurs inscrits à une course donnée.
     - get_favoris_par_course(): top N favoris H/F selon l'index UTMB.
     - insert_course(): création d'une nouvelle course (admin).
-    - update_avis_expert(): mise à jour de l'avis du Duc (admin).
-    - update_participants(): mise à jour des inscrits d'une course (admin).
 """
 
 # LIBRAIRIES ----------------------------
@@ -20,10 +17,6 @@ import streamlit as st
 # LOCAL LIBRAIRIES ----------------------
 from src.db.connection import get_supabase_client, get_supabase_admin_client
 
-
-# 
-# CONSTANTES
-# ---------------------------------------------------------------------------
 # Formats UTMB valides et colonnes d'index associées
 FORMAT_TO_COLUMN: dict[str, str] = {
     "global": "index_utmb_global",
@@ -60,37 +53,6 @@ def get_courses_a_venir() -> pd.DataFrame:
     except Exception as e:
         st.error(f"Erreur lors du chargement des courses à venir : {e}")
         return pd.DataFrame()
-
-
-def get_course_by_id(course_id: str) -> dict | None:
-    """
-    Récupère le détail complet d'une course à partir de son UUID.
-
-    Paramètres :
-        course_id (str) : UUID de la course recherchée.
-
-    Retourne :
-        dict | None : dictionnaire avec tous les champs de la course, ou None si la course n'existe pas.
-
-    Lève :
-        Exception : en cas d'erreur de connexion ou de requête.
-    """
-
-    try:
-        supabase = get_supabase_client()
-        response = (
-            supabase
-            .table("courses")
-            .select("*")
-            .eq("id", course_id)
-            .limit(1)
-            .execute()
-        )
-        return response.data
-
-    except Exception as e:
-        st.error(f"Erreur lors du chargement de la course {course_id} : {e}")
-        return None
 
 
 # LECTURE - PARTICIPANTS ET FAVORIS
@@ -183,7 +145,6 @@ def insert_course(
 ) -> dict | None:
     """
     Insère une nouvelle course dans la base de données.
-
     Réservé aux administrateurs. Utilise le client admin (SERVICE_KEY) pour bypasser le Row Level Security.
 
     Paramètres :

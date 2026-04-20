@@ -15,7 +15,6 @@ Si l'utilisateur est déjà connecté, la page affiche un message de bienvenue a
 # LIBRAIRIES ----------------------------
 import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
-import streamlit.components.v1 as components
 
 # LOCAL LIBRAIRIES ----------------------
 from src.functions.utils import extraire_bloc_style, render_footer
@@ -50,7 +49,6 @@ def afficher_utilisateur_connecte() -> None:
         st.info("Tu as les droits administrateur.")
 
     add_vertical_space(1)
-
     if st.button("Se déconnecter", type = "primary"):
         deconnecter()
 

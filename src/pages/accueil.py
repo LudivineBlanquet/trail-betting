@@ -15,7 +15,7 @@ import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
 
 # LOCAL LIBRAIRIES ----------------------
-from src.functions.utils import extraire_bloc_style, get_image_base64, render_footer, formater_date
+from src.functions.utils import extraire_bloc_style, get_image_base64, render_footer
 from src.components.navigation import carte_redirection_page
 
 # Dictionnaire de mapping format → image
@@ -44,7 +44,7 @@ def afficher_hero() -> None:
                 <p class="hero-tagline">Le Betclic du trail running</p>
                 <p class="hero-description">
                     Pronostique les podiums des plus grandes courses de trail, défie tes amis et grimpe au classement.<br>
-                    Chaque vendredi, de nouvelles courses et l'avis de ton Souverain, le Duc de Savoie ❤.
+                    Chaque vendredi, de nouvelles courses et l'avis de ton Souverain, le Duc de Savoie ♛❤︎.
                 </p>
             </div>
         </div>
@@ -66,7 +66,6 @@ def afficher_cartes_navigation() -> None:
     img_courses = get_image_base64("src/assets/images/utmb_index.png")
     img_classement = get_image_base64("src/assets/images/duc-army-logo.webp")
     img_compte = get_image_base64("src/assets/images/mountain-running-silhouette.png")
-
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:

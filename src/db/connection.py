@@ -3,9 +3,8 @@ MODULE DE CONNEXION A LA BASE DE DONNEES
 
 Ce module centralise la gestion des connexions à la base de données PostgreSQL hébergée sur Supabase.
 
-Deux modes de connexion sont disponibles selon le besoin:
+Un mode de connexion disponible:
     - Client Supabase : via supabase-py, pour les opérations CRUD standard soumises au Row Level Security (RLS).
-    - Connexion directe psycopg2 : pour les appels aux fonctions PL/pgSQL et les requêtes complexes via pd.read_sql().
 
 Les connexions sont mises en cache via @st.cache_resource pour n'être instanciées qu'une seule fois par session Streamlit,
 évitant les reconnexions inutiles à chaque rerun.
@@ -17,7 +16,6 @@ from supabase import create_client, Client
 
 # LOCAL LIBRAIRIES ----------------------
 from src.components.config import config
-
 
 SCHEMA = "trail_betting_db"
 
@@ -57,7 +55,6 @@ def get_supabase_admin_client() -> Client:
     Utilise la SERVICE_KEY qui bypasse le Row Level Security. A utiliser UNIQUEMENT pour les opérations d'administration:
         - Scoring des paris après publication des résultats.
         - Saisie des résultats par les admins.
-        - Mise à jour des index UTMB.
 
     Ne jamais exposer ce client côté interface utilisateur standard.
 

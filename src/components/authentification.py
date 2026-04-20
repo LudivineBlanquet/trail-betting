@@ -55,7 +55,6 @@ def verifier_mot_de_passe(mot_de_passe: str, hash_stocke: str) -> bool:
 def connecter_utilisateur(user: dict) -> None:
     """
     Injecte les informations de l'utilisateur dans le session_state.
-
     Appelé après une connexion ou une inscription réussie pour initialiser la session de l'utilisateur.
 
     Paramètres :
@@ -66,6 +65,7 @@ def connecter_utilisateur(user: dict) -> None:
     st.session_state["user_id"] = user["id"]
     st.session_state["user_pseudo"] = user["pseudo"]
     st.session_state["user_role"] = user["role"]
+    st.session_state["user_email"] = user["email"]
 
 
 def email_existe(email: str) -> bool:
@@ -176,14 +176,13 @@ def connecter(email: str, mot_de_passe: str) -> bool:
 def inscrire(nom: str, prenom: str, email: str, pseudo: str, mot_de_passe: str) -> bool:
     """
     Crée un nouveau compte utilisateur.
-
     Vérifie l'unicité de l'email et du pseudo, hash le mot de passe, insère l'utilisateur en base et connecte automatiquement.
 
     Paramètres :
-        nom          (str) : nom de famille de l'utilisateur.
-        prenom       (str) : prénom de l'utilisateur.
-        email        (str) : adresse email (identifiant de connexion).
-        pseudo       (str) : pseudo public affiché dans le classement.
+        nom (str) : nom de famille de l'utilisateur.
+        prenom (str) : prénom de l'utilisateur.
+        email (str) : adresse email (identifiant de connexion).
+        pseudo (str) : pseudo public affiché dans le classement.
         mot_de_passe (str) : mot de passe en clair (sera hashé avant insertion).
 
     Retourne :
@@ -203,19 +202,19 @@ def inscrire(nom: str, prenom: str, email: str, pseudo: str, mot_de_passe: str) 
         return False
 
     try:
-        admin     = get_supabase_admin_client()
-        mdp_hash  = hasher_mot_de_passe(mot_de_passe)
+        admin = get_supabase_admin_client()
+        mdp_hash = hasher_mot_de_passe(mot_de_passe)
 
-        response  = (
+        response = (
             admin
             .table("utilisateurs")
             .insert({
-                "nom"     : nom,
-                "prenom"  : prenom,
-                "email"   : email,
-                "pseudo"  : pseudo,
+                "nom": nom,
+                "prenom": prenom,
+                "email": email,
+                "pseudo": pseudo,
                 "mdp_hash": mdp_hash,
-                "role"    : "user",
+                "role": "user",
             })
             .execute()
         )
@@ -239,29 +238,27 @@ def deconnecter() -> None:
     """
     Déconnecte l'utilisateur en réinitialisant le session_state.
 
-    Remet toutes les variables de session à leurs valeurs par défaut
-    via initialize_session_state(), puis force un rerun de l'application
-    pour actualiser l'affichage.
+    Remet toutes les variables de session à leurs valeurs par défaut via initialize_session_state(),
+    puis force un rerun de l'application pour actualiser l'affichage.
     """
 
     # Réinitialisation explicite des clés d'authentification
     st.session_state["authentifie"] = False
-    st.session_state["user_id"]     = None
+    st.session_state["user_id"] = None
     st.session_state["user_pseudo"] = None
-    st.session_state["user_role"]   = None
+    st.session_state["user_role"] = None
 
     st.rerun()
 
 
 # DIALOGS
 # ---------------------------------------------------------------------------
-@st.dialog("Connexion", width="small")
+@st.dialog("Connexion", width = "small")
 def dialog_connexion() -> None:
     """
     Dialog de connexion à l'application.
 
-    Affiche un formulaire email + mot de passe. En cas de succès,
-    ferme le dialog et rerun l'application pour actualiser l'état.
+    Affiche un formulaire email + mot de passe. En cas de succès, ferme le dialog et rerun l'application pour actualiser l'état.
     Affiche un lien pour basculer vers le dialog d'inscription.
     """
 
@@ -275,11 +272,9 @@ def dialog_connexion() -> None:
     )
 
     email = st.text_input("Email")
-    mot_de_passe = st.text_input("Mot de passe", type="password")
+    mot_de_passe = st.text_input("Mot de passe", type = "password")
 
-    add_vertical_space(2)
     col1, col2 = st.columns([1, 1])
-
     if col1.button("Se connecter", use_container_width = True, type = "primary"):
         if not email or not mot_de_passe:
             st.warning("Merci de remplir tous les champs.")
@@ -288,20 +283,19 @@ def dialog_connexion() -> None:
             if ok:
                 st.rerun()
             else:
-                st.error("Email ou mot de passe incorrect.")
+                st.error("Email ou mot de passe incorrect.", icon = "✖")
 
-    if col2.button("Créer un compte", use_container_width=True):
+    if col2.button("Créer un compte", use_container_width = True):
         # Ferme ce dialog et ouvre le dialog d'inscription
         st.rerun()
 
 
-@st.dialog("Créer un compte", width="small")
+@st.dialog("Créer un compte", width = "small")
 def dialog_inscription() -> None:
     """
     Dialog d'inscription à l'application.
 
-    Affiche un formulaire complet (nom, prénom, email, pseudo, mot de passe
-    + confirmation). Valide les champs côté client avant d'appeler inscrire().
+    Affiche un formulaire complet. Valide les champs côté client avant d'appeler inscrire().
     En cas de succès, ferme le dialog et rerun l'application.
     """
 
@@ -319,35 +313,31 @@ def dialog_inscription() -> None:
     with col1:
         prenom = st.text_input("Prénom")
     with col2:
-        nom    = st.text_input("Nom")
+        nom = st.text_input("Nom")
 
-    email  = st.text_input("Email")
-    pseudo = st.text_input(
-        "Pseudo",
-        help    = "Ton nom affiché dans le classement."
-    )
+    email = st.text_input("Email")
+    pseudo = st.text_input("Pseudo", help = "Ton nom affiché dans le classement.")
 
     col3, col4 = st.columns(2)
     with col3:
-        mdp         = st.text_input("Mot de passe", type="password")
+        mdp = st.text_input("Mot de passe", type = "password")
     with col4:
-        mdp_confirm = st.text_input("Confirmer le mot de passe", type="password")
+        mdp_confirm = st.text_input("Confirmer le mot de passe", type = "password")
 
-    add_vertical_space(1)
-    if st.button("Créer mon compte", type="primary", use_container_width=True):
+    if st.button("Créer mon compte", type = "primary", use_container_width = True):
 
         # Validations côté client
         if not all([nom, prenom, email, pseudo, mdp, mdp_confirm]):
-            st.warning("Merci de remplir tous les champs.")
+            st.warning("Merci de remplir tous les champs.", icon = "⚠")
 
         elif mdp != mdp_confirm:
-            st.error("Les mots de passe ne correspondent pas.")
+            st.error("Les mots de passe ne correspondent pas.", icon = "✖")
 
         elif "@" not in email:
-            st.error("L'adresse email n'est pas valide.")
+            st.error("L'adresse email n'est pas valide.", icon = "✖")
 
         else:
             ok = inscrire(nom, prenom, email, pseudo, mdp)
             if ok:
-                st.success(f"Compte créé ! Bienvenue {pseudo} 🎉")
+                st.success(f"Compte créé ! Bienvenue {pseudo}.", icon = "✔")
                 st.rerun()
