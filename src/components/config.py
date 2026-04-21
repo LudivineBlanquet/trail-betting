@@ -36,11 +36,11 @@ class Config:
         En production (Streamlit Cloud), st.secrets est disponible et prioritaire. En local, le fichier .env est chargé via python-dotenv.
         """
 
-        if self._is_streamlit_cloud():
-            self._load_from_st_secrets()
+        if self.is_streamlit_cloud():
+            self.load_from_st_secrets()
         else:
             load_dotenv()
-            self._load_from_env()
+            self.load_from_env()
 
 
     # METHODES PRIVEES
@@ -82,7 +82,7 @@ class Config:
         self.SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
         self.DATABASE_URL = os.getenv("DATABASE_URL")
 
-        self._verifier_credentials()
+        self.verifier_credentials()
 
 
     def verifier_credentials(self) -> None:
