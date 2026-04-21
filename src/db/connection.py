@@ -25,10 +25,8 @@ SCHEMA = "trail_betting_db"
 def get_supabase_client() -> Client:
     """
     Instancie et retourne le client Supabase (clé anonyme).
-
     Utilise la ANON_KEY, soumise au Row Level Security défini dans le schema.
     A utiliser pour toutes les opérations standard : lecture des courses, insertion d'un pari, lecture du classement.
-
     Le décorateur @st.cache_resource garantit qu'une seule instance est créée pour toute la durée de vie de l'application.
 
     Retourne :
@@ -51,7 +49,6 @@ def get_supabase_client() -> Client:
 def get_supabase_admin_client() -> Client:
     """
     Instancie et retourne le client Supabase avec la clé service (admin).
-
     Utilise la SERVICE_KEY qui bypasse le Row Level Security. A utiliser UNIQUEMENT pour les opérations d'administration:
         - Scoring des paris après publication des résultats.
         - Saisie des résultats par les admins.
@@ -78,7 +75,6 @@ def get_supabase_admin_client() -> Client:
 def verifier_connexions() -> bool:
     """
     Vérifie que la connexion Supabase est active.
-
     Effectue une requête légère sur la table utilisateurs pour s'assurer que le client répond correctement. Utile au démarrage de l'application.
 
     Retourne :

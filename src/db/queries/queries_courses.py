@@ -132,20 +132,13 @@ def get_favoris_par_course(course_id: str, format_course: str, top_n: int = 10) 
 
 # ECRITURE - ADMIN UNIQUEMENT
 # ---------------------------------------------------------------------------
-def insert_course(
-    evenement: str,
-    nom: str,
-    format_course: str,
-    distance: float,
-    denivele: float,
-    lieu: str,
-    date_course: str,
-    avis_expert: str = None,
-    image_url: str = None
-) -> dict | None:
+def insert_course(evenement: str, nom: str, format_course: str, distance: float, denivele: float, lieu: str, date_course: str, avis_expert: str = None, image_url: str = None) -> dict | None:
     """
-    Insère une nouvelle course dans la base de données.
-    Réservé aux administrateurs. Utilise le client admin (SERVICE_KEY) pour bypasser le Row Level Security.
+    Insère ou met à jour une course dans la table courses.
+
+    Stratégie : upsert basé sur une contrainte d’unicité (evenement, nom, date_course).
+    - Si la course existe déjà → mise à jour
+    - Sinon → insertion
 
     Paramètres :
         evenement (str) : nom de l'événement parent (ex : 'Val d'Aran by UTMB').
@@ -160,6 +153,10 @@ def insert_course(
 
     Retourne :
         dict | None : données de la course créée (avec son UUID généré), ou None en cas d'erreur.
+
+    Remarques :
+    - Repose sur une contrainte UNIQUE(evenement, nom, date_course).
+    - Garantit l’absence de doublons pour une même course à une date donnée.
     """
 
     try:
@@ -167,7 +164,7 @@ def insert_course(
         response = (
             admin
             .table("courses")
-            .insert({
+            .upsert({
                 "evenement": evenement,
                 "nom": nom,
                 "format": format_course,

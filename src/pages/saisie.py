@@ -21,7 +21,7 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 # LOCAL LIBRAIRIES ----------------------
 from src.functions.utils import formater_date
 from src.db.queries.queries_courses import insert_course
-from src.db.queries.queries_coureurs import get_tous_les_coureurs
+from src.db.queries.queries_coureurs import get_tous_les_coureurs, reconcilier_participants, insert_participants_reconcilies
 from src.db.queries.queries_resultats import insert_resultats
 from src.db.connection import get_supabase_admin_client
 
@@ -169,110 +169,6 @@ def onglet_ajouter_course() -> None:
 
 # ONGLET 2 : AJOUTER LES PARTICIPANTS
 # ---------------------------------------------------------------------------
-def reconcilier_participants(df_import: pd.DataFrame, df_coureurs: pd.DataFrame, course_id: str) -> tuple[list[dict], list[dict], pd.DataFrame]:
-    """
-    Réconcilie les participants importés avec le référentiel coureurs.
-
-    Pour chaque ligne du fichier importé (Nom, Prenom, Sexe), tente de trouver le coureur correspondant dans df_coureurs via une jointure
-    insensible à la casse sur (nom, prenom, sexe).
-
-    Seuls les participants trouvés dans le référentiel sont conservés. Les non-trouvés sont retournés dans un DataFrame séparé pour signalement.
-
-    Paramètres :
-        df_import (pd.DataFrame) : données importées depuis le fichier. Colonnes attendues : Nom, Prenom, Sexe.
-        df_coureurs (pd.DataFrame) : référentiel complet des coureurs.
-
-    Retourne :
-        tuple :
-            - list[dict] : participants réconciliés prêts pour insertion, avec coureur_id, nom, prenom, sexe.
-            - pd.DataFrame : participants non trouvés dans le référentiel.
-    """
-
-    df_import = df_import.copy()
-    df_coureurs = df_coureurs.copy()
-
-    # Normalisation
-    df_import["nom_norm"] = df_import["Nom"].str.strip().str.upper()
-    df_import["prenom_norm"] = df_import["Prenom"].str.strip().str.upper()
-    df_import["sexe_norm"] = df_import["Sexe"].str.strip().str.upper()
-
-    df_coureurs["nom_norm"] = df_coureurs["nom"].str.strip().str.upper()
-    df_coureurs["prenom_norm"] = df_coureurs["prenom"].str.strip().str.upper()
-    df_coureurs["sexe_norm"] = df_coureurs["sexe"].str.strip().str.upper()
-
-    # Jointure sur (nom, prenom, sexe)
-    merged = df_import.merge(df_coureurs[["id", "nom_norm", "prenom_norm", "sexe_norm"]], on = ["nom_norm", "prenom_norm", "sexe_norm"], how = "left")
-
-    trouves = merged[merged["id"].notna()]
-    non_trouves = merged[merged["id"].isna()][["Nom", "Prenom", "Sexe"]]
-
-    # Chargement des coureur_id déjà en base pour cette course
-    admin = get_supabase_admin_client()
-    existants_resp = (
-        admin
-        .schema("trail_betting_db")
-        .table("participants_course")
-        .select("coureur_id")
-        .eq("course_id", course_id)
-        .execute()
-    )
-    deja_inseres = {p["coureur_id"] for p in existants_resp.data}
-
-    participants_nouveaux = []
-    participants_existants = []
-
-    for _, row in trouves.iterrows():
-        entry = {
-            "coureur_id": row["id"],
-            "nom": row["Nom"],
-            "prenom": row["Prenom"],
-            "sexe": row["sexe_norm"]
-        }
-        if row["id"] in deja_inseres:
-            participants_existants.append(entry)
-        else:
-            participants_nouveaux.append(entry)
-
-    return participants_nouveaux, participants_existants, non_trouves.reset_index(drop = True)
-
-
-def insert_participants_reconcilies(course_id: str, participants: list[dict]) -> bool:
-    """
-    Insère les participants réconciliés dans la table participants_course.
-    Stratégie delete + insert : supprime d'abord les participants existants pour cette course, puis insère les nouveaux.
-
-    Paramètres :
-        course_id (str) : UUID de la course.
-        participants (list[dict]) : participants réconciliés avec coureur_id, nom, prenom, sexe.
-
-    Retourne :
-        bool : True si l'insertion a réussi, False sinon.
-    """
-
-    if not participants:
-        return True
-
-    try:
-        admin = get_supabase_admin_client()
-
-        rows = [
-            {
-                "course_id": course_id,
-                "coureur_id": p["coureur_id"],
-                "nom": p["nom"],
-                "prenom": p["prenom"],
-                "sexe": p["sexe"]
-            }
-            for p in participants
-        ]
-        admin.schema("trail_betting_db").table("participants_course").insert(rows).execute()
-        return True
-
-    except Exception as e:
-        st.error(f"Erreur lors de l'enregistrement des participants : {e}", icon = "✖")
-        return False
-
-
 def onglet_participants() -> None:
     """
     Affiche l'interface d'import des participants pour une course.
@@ -288,7 +184,6 @@ def onglet_participants() -> None:
     st.caption("Importe un fichier CSV ou Excel avec les colonnes **Nom**, **Prenom**, **Sexe**. Seuls les coureurs présents dans le référentiel seront intégrés.")
 
     add_vertical_space(1)
-
     # Sélection de la course
     df_courses = get_toutes_les_courses()
 
@@ -303,7 +198,6 @@ def onglet_participants() -> None:
     course_id = df_courses.iloc[idx_course]["id"]
 
     add_vertical_space(1)
-
     # Upload du fichier
     fichier = st.file_uploader("Fichier participants (CSV ou Excel)", type = ["csv", "xlsx", "xls"], key = "upload_participants")
 
@@ -353,7 +247,6 @@ def onglet_participants() -> None:
         return
 
     add_vertical_space(1)
-
     if st.button(f"Enregistrer {len(participants_nouveaux)} nouveaux participants", type = "primary"):
         ok = insert_participants_reconcilies(course_id, participants_nouveaux)
         if ok:
@@ -403,7 +296,6 @@ def onglet_resultats() -> None:
     """
 
     st.caption("Saisis le podium officiel. Cette action déclenche le calcul automatique des points pour tous les paris.")
-
     add_vertical_space(1)
 
     # Sélection de la course
@@ -420,7 +312,6 @@ def onglet_resultats() -> None:
     course_id = df_courses.iloc[idx_course]["id"]
 
     add_vertical_space(1)
-
     # Détection du mode : insertion ou édition
     resultats_existants = get_resultats_bruts(course_id)
     est_edition = resultats_existants is not None
@@ -451,7 +342,6 @@ def onglet_resultats() -> None:
     # Séparation H / F
     df_h = df_participants[df_participants["sexe"] == "H"].reset_index(drop = True)
     df_f = df_participants[df_participants["sexe"] == "F"].reset_index(drop = True)
-
 
     # Construction des options selectbox
     def build_opts(df: pd.DataFrame) -> tuple[list, dict]:
@@ -489,13 +379,11 @@ def onglet_resultats() -> None:
     f3_pre = resultats_existants.get("femme_3eme") if est_edition else None
 
     col_h, col_f = st.columns(2)
-
     with col_h:
         st.markdown("**Hommes :**")
         sel_h1 = st.selectbox("🥇 1er", opts_h, index = index_existant(h1_pre, map_h), key = f"res_h1_{course_id}")
         sel_h2 = st.selectbox("🥈 2ème", opts_h, index = index_existant(h2_pre, map_h), key = f"res_h2_{course_id}")
         sel_h3 = st.selectbox("🥉 3ème", opts_h, index = index_existant(h3_pre, map_h), key = f"res_h3_{course_id}")
-
     with col_f:
         st.markdown("**Femmes :**")
         sel_f1 = st.selectbox("🥇 1ère", opts_f, index = index_existant(f1_pre, map_f), key = f"res_f1_{course_id}")
@@ -521,38 +409,20 @@ def onglet_resultats() -> None:
         st.warning("La même coureuse est sélectionnée à plusieurs places (femmes).", icon = "⚠")
 
     add_vertical_space(1)
-
     label_bouton = "Modifier les résultats" if est_edition else "Enregistrer les résultats"
-
     if st.button(label_bouton, type = "primary", disabled = doublon_h or doublon_f):
 
-        if est_edition:
-            from src.db.queries.queries_resultats import update_resultats
-            ok = update_resultats(
-                course_id = course_id,
-                homme_1er = uuid_h1,
-                homme_2eme = uuid_h2,
-                homme_3eme = uuid_h3,
-                femme_1ere = uuid_f1,
-                femme_2eme = uuid_f2,
-                femme_3eme = uuid_f3,
-            )
-            if ok:
-                st.success("Résultats modifiés !", icon = "✔")
-                st.caption("⚠ Note : le recalcul automatique des points ne se relance pas sur une modification.")
-        else:
-            resultat = insert_resultats(
-                course_id = course_id,
-                admin_id = st.session_state["user_id"],
-                homme_1er = uuid_h1,
-                homme_2eme = uuid_h2,
-                homme_3eme = uuid_h3,
-                femme_1ere = uuid_f1,
-                femme_2eme = uuid_f2,
-                femme_3eme = uuid_f3,
-            )
-            if resultat:
-                st.success("Résultats enregistrés ! Les points ont été calculés automatiquement pour tous les paris.", icon = "✔")
+        resultats = insert_resultats(
+            course_id = course_id,
+            homme_1er = uuid_h1,
+            homme_2eme = uuid_h2,
+            homme_3eme = uuid_h3,
+            femme_1ere = uuid_f1,
+            femme_2eme = uuid_f2,
+            femme_3eme = uuid_f3
+        )
+        if resultats:
+            st.success("Résultats enregistrés ! Les points ont été calculés automatiquement pour tous les paris.", icon = "✔")
 
 
 # MAIN

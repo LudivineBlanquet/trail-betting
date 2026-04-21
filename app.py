@@ -46,7 +46,8 @@ with open("config_pages.yml", "r", encoding = 'utf-8') as f:
 st.set_page_config(
     page_title = variables["PAGE_CONFIG"]["page_title"],
     page_icon = variables["PAGE_CONFIG"]["page_icon"],
-    layout = variables["PAGE_CONFIG"]["page_layout"]
+    layout = variables["PAGE_CONFIG"]["page_layout"],
+    initial_sidebar_state = variables["PAGE_CONFIG"]["sidebar_state"],
 )
 
 # INITIALISATION

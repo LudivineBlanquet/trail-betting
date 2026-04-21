@@ -44,7 +44,7 @@ def afficher_hero() -> None:
                 <p class="hero-tagline">Le Betclic du trail running</p>
                 <p class="hero-description">
                     Pronostique les podiums des plus grandes courses de trail, défie tes amis et grimpe au classement.<br>
-                    Chaque vendredi, de nouvelles courses et l'avis de ton Souverain, le Duc de Savoie ♛❤︎.
+                    Chaque vendredi, de nouvelles courses et l'avis de ton Souverain, le Duc de Savoie ❤︎.
                 </p>
             </div>
         </div>

@@ -335,7 +335,7 @@ def set_navigation() :
 
     with st.sidebar:
         col1, col2 = st.columns([1, 1], gap = "xxsmall")
-        if col1.button("Infos", type = 'tertiary', icon = "ℹ"):
+        if col1.button("Infos", type = 'tertiary', icon = ":material/info:"):
             afficher_bloc_info()
         if col2.button("Contact", type = "tertiary", icon = "✉"):
             afficher_contact()

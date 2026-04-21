@@ -6,7 +6,6 @@ Ce module regroupe toutes les requêtes relatives aux résultats officiels des c
 Fonctions disponibles :
     - get_derniers_resultats() : derniers résultats publiés toutes courses.
     - insert_resultats() : saisie des résultats officiels (admin).
-    - update_resultats() : modification des résultats existants (admin).
 """
 
 # LIBRAIRIES ----------------------------
@@ -48,18 +47,13 @@ def get_derniers_resultats(limit: int = 5) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def insert_resultats(
-    course_id: str,
-    admin_id: str,
-    homme_1er: str | None = None,
-    homme_2eme: str | None = None,
-    homme_3eme: str | None = None,
-    femme_1ere: str | None = None,
-    femme_2eme: str | None = None,
-    femme_3eme: str | None = None
-) -> dict | None:
+def insert_resultats(course_id: str, admin_id: str, homme_1er: str | None = None, homme_2eme: str | None = None, homme_3eme: str | None = None, femme_1ere: str | None = None, femme_2eme: str | None = None, femme_3eme: str | None = None) -> dict | None:
     """
-    Saisit les résultats officiels d'une course.
+    Insère ou met à jour les résultats officiels d'une course.
+
+    Stratégie : upsert basé sur une contrainte d’unicité (course_id).
+    - Si les résultats existent déjà → mise à jour
+    - Sinon → insertion
 
     Réservé aux administrateurs. L'insertion déclenche automatiquement le trigger fn_scorer_paris_apres_resultats()
     qui calcule les points de tous les paris et met à jour les totaux utilisateurs.
@@ -76,6 +70,11 @@ def insert_resultats(
 
     Retourne :
         dict | None : données du résultat créé ou None en cas d'erreur.
+
+    Remarques :
+    - Repose sur une contrainte UNIQUE(course_id).
+    - Garantit un seul résultat par course.
+    - Le trigger doit être défini sur INSERT ET UPDATE pour assurer la cohérence des scores.
     """
 
     try:
@@ -83,7 +82,7 @@ def insert_resultats(
         response = (
             admin
             .table("resultats")
-            .insert({
+            .upsert({
                 "course_id": course_id,
                 "saisi_par": admin_id,
                 "homme_1er": homme_1er,
@@ -100,52 +99,3 @@ def insert_resultats(
     except Exception as e:
         st.error(f"Erreur lors de la saisie des résultats : {e}")
         return None
-
-
-def update_resultats(
-    course_id: str,
-    homme_1er: str | None = None,
-    homme_2eme: str | None = None,
-    homme_3eme: str | None = None,
-    femme_1ere: str | None = None,
-    femme_2eme: str | None = None,
-    femme_3eme: str | None = None
-) -> bool:
-    """
-    Met à jour les résultats officiels d'une course existante.
-
-    Utilisé en mode édition lorsque des résultats ont déjà été saisis et que l'admin souhaite les corriger
-    depuis l'application. Le trigger de scoring ne se relance pas automatiquement sur un UPDATE.
-
-    Paramètres :
-        course_id (str) : UUID de la course.
-        homme_1er (str | None) : UUID du coureur arrivé 1er.
-        homme_2eme (str | None) : UUID du coureur arrivé 2ème.
-        homme_3eme (str | None) : UUID du coureur arrivé 3ème.
-        femme_1ere (str | None) : UUID de la coureuse arrivée 1ère.
-        femme_2eme (str | None) : UUID de la coureuse arrivée 2ème.
-        femme_3eme (str | None) : UUID de la coureuse arrivée 3ème.
-
-    Retourne :
-        bool : True si la mise à jour a réussi, False sinon.
-    """
-
-    try:
-        admin = get_supabase_admin_client()
-        admin \
-            .table("resultats") \
-            .update({
-                "homme_1er" : homme_1er,
-                "homme_2eme": homme_2eme,
-                "homme_3eme": homme_3eme,
-                "femme_1ere": femme_1ere,
-                "femme_2eme": femme_2eme,
-                "femme_3eme": femme_3eme,
-            }) \
-            .eq("course_id", course_id) \
-            .execute()
-        return True
-
-    except Exception as e:
-        st.error(f"Erreur lors de la mise à jour des résultats : {e}")
-        return False
