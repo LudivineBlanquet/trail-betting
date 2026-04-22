@@ -94,11 +94,11 @@ def formater_date(date) -> str:
     """
     Convertit une date en format français DD/MM/YYYY.
 
-    Paramètres :
-        date : date au format string 'YYYY-MM-DD', datetime ou date Python.
+    Paramètres:
+        date: date au format string 'YYYY-MM-DD', datetime ou date Python.
 
-    Retourne :
-        str : date formatée 'DD/MM/YYYY' ou chaîne vide si None.
+    Retourne:
+        str: date formatée 'DD/MM/YYYY' ou chaîne vide si None.
     """
 
     return pd.to_datetime(date).strftime("%d/%m/%Y")

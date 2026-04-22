@@ -186,12 +186,11 @@ def carte_redirection_page(page: str, image: str, titre: str):
         <style>
             /* Style des cartes de navigation cliquables */
             .card {
-                background-color: #F2F6FC;
-                box-shadow: 3px 3px 5px rgba(0, 32, 96, 0.25);
+                background-color: rgba(242, 246, 252, 0.7);
+                box-shadow: 3px 3px 5px #727272;
                 border-radius: 15px;
                 padding: 20px;
                 text-align: center;
-                color: #504b51;
                 font-family: system-ui;
                 font-weight: bold;
                 font-size: 14px;
@@ -202,8 +201,8 @@ def carte_redirection_page(page: str, image: str, titre: str):
             /* Effet au survol */
             .card:hover {
                 transform: scale(1.03);
-                background-color: #E9EBF2;
-                box-shadow: 3px 3px 5px rgba(0, 32, 96, 0.25);
+                background-color: rgba(242, 246, 252, 0.6);
+                box-shadow: 3px 3px 5px #727272;
             }
         </style>
     """
@@ -337,7 +336,7 @@ def set_navigation() :
         col1, col2 = st.columns([1, 1], gap = "xxsmall")
         if col1.button("Infos", type = 'tertiary', icon = ":material/info:"):
             afficher_bloc_info()
-        if col2.button("Contact", type = "tertiary", icon = "✉"):
+        if col2.button("Contact", type = "tertiary", icon = ":material/mail:"):
             afficher_contact()
 
     pg = st.navigation(menu)        
