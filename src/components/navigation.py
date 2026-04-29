@@ -7,7 +7,7 @@ Fonctionnalités principales :
 - Lecture dynamique de la configuration de navigation via un fichier YAML (config_pages.yml) :
     * Définition des pages disponibles et de leur organisation en sections logiques (Menu, etc.).
 - Génération du menu de navigation (st.navigation) basée sur le fichier YAML.
-- Affichage d'un logo personnalisable dans la barre latérale.
+- Affichage de logos dans la barre latérale ainsi que de fenêtres de dialogues d'informations et de contact.
 - Affichage de cartes sur la page d'accueil servant de boutons de navigation vers les autres pages.
 
 Ce module est utilisé au niveau principal de l'application (app.py) pour initialiser la structure de navigation lors du lancement.
@@ -16,7 +16,6 @@ Ce module est utilisé au niveau principal de l'application (app.py) pour initia
 # LIBRAIRIES ----------------------------
 import streamlit as st
 import streamlit.components.v1 as components
-from streamlit_extras.add_vertical_space import add_vertical_space
 import yaml
 
 # LOCAL LIBRAIRIES ----------------------------
@@ -41,6 +40,7 @@ def make_wrapped_page(callable_or_path: callable, page_name: str):
         callable_or_path()
 
     return wrapped
+
 
 def charger_config_et_pages():
     """
@@ -68,33 +68,51 @@ def charger_config_et_pages():
 
     return variables, nav
 
-def afficher_logo_sidebar(logo_path: str, logo_link: str):
+
+def afficher_logos_sidebar(logo_path: str, logo_link: str, instagram_url: str = "https://www.instagram.com/duc.army"):
     """
-    Affiche le logo dans la sidebar si présent.
+    Affiche le logo principal et l'icône Instagram côte à côte dans la sidebar.
     
     Args:
         logo_path (str): Chemin vers le fichier image du logo.
         logo_link (str): URL vers laquelle le logo redirige lorsqu'on clique dessus.
+        instagram_url (str): URL du profil Instagram.
     """
 
     if not logo_path:
         return
 
     logo_base64 = get_image_base64(logo_path)
+    img_instagram = get_image_base64("src/assets/images/instagram_icon.png")
+
     html = f"""
         <style>
-        .rounded-img {{
+        .sidebar-logos {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 6px;
+            margin-bottom: 8px;
+        }}
+        .sidebar-logos .main-logo {{
             border-radius: 15px;
-            width: 75%;
-            display: block;
-            margin-top: -10px;
-            margin-left: auto;
-            margin-right: auto;
+            width: 70%;
+        }}
+        .sidebar-logos .instagram-logo {{
+            width: 28px;
+            opacity: 0.8;
+            flex-shrink: 0;
         }}
         </style>
-        <a href="{logo_link}" target="_blank">
-            <img src="data:image/png;base64,{logo_base64}" class="rounded-img">
-        </a>
+        <div class="sidebar-logos">
+            <a href="{logo_link}" target="_blank">
+                <img src="data:image/png;base64,{logo_base64}" class="main-logo">
+            </a>
+            <a href="{instagram_url}" target="_blank">
+                <img src="data:image/png;base64,{img_instagram}" class="instagram-logo">
+            </a>
+        </div>
     """
     st.sidebar.markdown(html, unsafe_allow_html = True)
 
@@ -184,12 +202,15 @@ def carte_redirection_page(page: str, image: str, titre: str):
     # CSS pour personnaliser l'apparence et l'effet au survol
     css = """
         <style>
+            .card {
+                margin: 5px;
+            }
             /* Style des cartes de navigation cliquables */
             .card {
                 background-color: rgba(242, 246, 252, 0.7);
                 box-shadow: 3px 3px 5px #727272;
                 border-radius: 15px;
-                padding: 20px;
+                padding: 15px;
                 text-align: center;
                 font-family: system-ui;
                 font-weight: bold;
@@ -207,7 +228,7 @@ def carte_redirection_page(page: str, image: str, titre: str):
         </style>
     """
 
-    return components.html(js + html + css, width = None)
+    return components.html(js + html + css, height = 130, width = None)
 
 
 @st.dialog("Comment ça marche ?", width = 'medium')
@@ -307,7 +328,7 @@ def afficher_contact() -> None:
                 st.error(f"Erreur lors de l'envoi : {e}", icon = "✖")
 
 
-def set_navigation() :
+def set_navigation():
     """
     Définit et exécute la navigation principale de l'application sans gestion de rôles.
 
@@ -323,8 +344,8 @@ def set_navigation() :
     # Chargement de la configuration et des pages
     variables, nav = charger_config_et_pages()
 
-    # Affichage du logo sidebar si présent
-    afficher_logo_sidebar(variables.get("LOGO_SIDEBAR"), variables.get("LOGO_LINK", "#"))
+    # Affichage de logos dans la sidebar
+    afficher_logos_sidebar(variables.get("LOGO_SIDEBAR"), variables.get("LOGO_LINK", "#"), instagram_url = "https://www.instagram.com/duc.army")
 
     # Bandeau connexion si non authentifié
     afficher_bandeau_connexion()

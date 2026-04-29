@@ -13,10 +13,12 @@ L'accès à la saisie d'un pari nécessite d'être connecté.
 
 # LIBRAIRIES ----------------------------
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.stylable_container import stylable_container
 import requests
 import base64
+import json
 from datetime import datetime, date
 
 # LOCAL LIBRAIRIES ----------------------
@@ -51,38 +53,142 @@ def afficher_derniers_resultats() -> None:
     if df.empty:
         return
 
-    st.markdown(
-        """
-        <div style="font-size: 16px; font-style: italic">
-        Derniers résultats disponibles...
-        </div>
-        """,
-        unsafe_allow_html = True
-    )
-    add_vertical_space(1)
+    # Préparer les images base64 pour chaque format
+    format_images_b64 = {fmt: get_image_base64(path) for fmt, path in FORMAT_IMAGES.items()}
 
-    df["course_format"] = df["course_format"].map(lambda format: f"data:image/png;base64,{get_image_base64(FORMAT_IMAGES[format])}"
-        if format in FORMAT_IMAGES else format)
-
-    # Renommage des colonnes pour l'affichage
-    df_affichage = df.rename(columns = {
-        "date_course": "Date",
-        "course_evt": "Evénement",
-        "course_nom": "Course",
-        "course_format": "Format",
-        "homme_1er": "1er Homme",
-        "femme_1ere": "1ère Femme",
+    # Convertir le DataFrame en liste de dicts
+    df_clean = df.rename(columns = {
+        "date_course": "date",
+        "course_evt": "evt",
+        "course_nom": "course",
+        "course_format": "format",
+        "homme_1er": "homme",
+        "femme_1ere": "femme",
+        "homme_1er_photo": "homme_photo",
+        "femme_1ere_photo": "femme_photo"
     }).drop(columns = ["saisi_at"])
-    df_affichage["Date"] = df_affichage["Date"].apply(formater_date)
 
-    st.dataframe(df_affichage, width = 'stretch', hide_index = True,
-        column_config = {
-            "Format": st.column_config.ImageColumn(
-                label = "Format",
-                width = "small"
-            )
-        }
-    )
+    rows_json = df_clean.to_json(orient = "records", force_ascii = False)
+    images_json = json.dumps(format_images_b64)
+
+    html = f"""
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: system-ui; color: var(--color-text-primary); }}
+        .toolbar {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }}
+        .toolbar-title {{ font-size: 15px; font-style: italic; color: #888; }}
+        input[type=search] {{ font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 0.5px solid #ccc; width: 200px; outline: none; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+        thead th {{ padding: 8px 12px; text-align: left; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #eee; cursor: pointer; user-select: none; white-space: nowrap; }}
+        thead th:hover {{ color: #333; }}
+        .sort-icon {{ margin-left: 4px; opacity: 0.4; font-size: 10px; }}
+        thead th.sorted .sort-icon {{ opacity: 1; }}
+        tbody tr {{ border-bottom: 0.5px solid #f0f0f0; transition: background 0.1s; }}
+        tbody tr:hover {{ background: #fafafa; }}
+        tbody tr:last-child {{ border-bottom: none; }}
+        td {{ padding: 1px 12px; vertical-align: middle; }}
+        .runner {{ display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; }}
+        .avatar {{ width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; }}
+        .avatar.m {{ background: #E6F1FB; color: #185FA5; }}
+        .avatar.f {{ background: #FBEAF0; color: #993556; }}
+        .date-chip {{ font-size: 12px; color: #888; }}
+        .fmt-img {{ width: 50px; height: 40px; object-fit: contain; }}
+    </style>
+
+    <div style="padding: 1rem 0; max-height: 400px; overflow-y: auto;">
+        <div class="toolbar">
+            <span class="toolbar-title">Derniers résultats disponibles...</span>
+            <input type="search" id="search" placeholder="Rechercher..." oninput="render()">
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sort('date')" id="h-date">Date <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('evt')" id="h-evt">Événement <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('course')" id="h-course">Course <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('format')" id="h-format">Format <span class="sort-icon">↕</span></th>
+                    <th>1er Homme</th>
+                    <th>1ère Femme</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const data = {rows_json};
+        const formatImages = {images_json};
+
+        const initials = name => name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+
+        const avatar = (name, photo, genre) => {{
+            if (photo) {{
+                return `<img src="${{photo}}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;">`;
+            }}
+            return `<div class="avatar ${{genre}}">${{initials(name)}}</div>`;
+        }};
+
+        const formatDate = d => {{
+            const [y, m, j] = d.split("-");
+            const mois = ["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];
+            return `${{j}} ${{mois[+m-1]}} ${{y}}`;
+        }};
+
+        let sortKey = "date", sortDir = -1;
+
+        function sort(key) {{
+            if (sortKey === key) sortDir *= -1;
+            else {{ sortKey = key; sortDir = -1; }}
+            document.querySelectorAll("thead th").forEach(th => th.classList.remove("sorted"));
+            document.getElementById("h-" + key)?.classList.add("sorted");
+            render();
+        }}
+
+        function render() {{
+            const q = document.getElementById("search").value.toLowerCase();
+            let rows = data.filter(r =>
+                (r.evt || "").toLowerCase().includes(q) ||
+                (r.course || "").toLowerCase().includes(q) ||
+                (r.format || "").toLowerCase().includes(q) ||
+                (r.homme || "").toLowerCase().includes(q) ||
+                (r.femme || "").toLowerCase().includes(q)
+            );
+            rows.sort((a, b) => {{
+                const av = a[sortKey] || "", bv = b[sortKey] || "";
+                return av < bv ? sortDir : av > bv ? -sortDir : 0;
+            }});
+            const tbody = document.getElementById("tbody");
+            if (!rows.length) {{
+                tbody.innerHTML = `<tr><td colspan="6" class="empty">Aucun résultat</td></tr>`;
+                return;
+            }}
+            tbody.innerHTML = rows.map(r => {{
+                const imgSrc = formatImages[r.format]
+                    ? `<img src="data:image/png;base64,${{formatImages[r.format]}}" class="fmt-img">`
+                    : `<span style="font-size:11px;color:#888">${{r.format}}</span>`;
+                return `
+                    <tr>
+                        <td><span class="date-chip">${{formatDate(r.date)}}</span></td>
+                        <td style="font-weight:500">${{r.evt}}</td>
+                        <td style="color:#888">${{r.course}}</td>
+                        <td>${{imgSrc}}</td>
+                        <td><div class="runner">${{avatar(r.homme, r.homme_photo, 'm')}}${{r.homme}}</div></td>
+                        <td><div class="runner">${{avatar(r.femme, r.femme_photo, 'f')}}${{r.femme}}</div></td>
+                    </tr>
+                `;
+            }}).join("");
+        }}
+
+        render();
+    </script>
+    """
+
+    row_height = 50 # hauteur par ligne en px
+    header_height = 100 # toolbar + thead
+    max_height = 360 # plafond
+    height = min(header_height + len(df_clean) * row_height, max_height)
+
+    components.html(html, height = height, scrolling = True)
 
 
 def afficher_favoris(course_id: str, format_course: str) -> None:

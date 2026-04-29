@@ -63,7 +63,7 @@ def afficher_cartes_navigation() -> None:
 
     img_courses = get_image_base64("src/assets/images/utmb_index.png")
     img_classement = get_image_base64("src/assets/images/duc-army-logo.webp")
-    img_compte = get_image_base64("src/assets/images/mountain-running-silhouette.png")
+    img_compte = get_image_base64("src/assets/images/mon-compte.png")
 
     col0, col1, col2, col3, col4 = st.columns([0.5, 1, 1, 1, 0.5])
     with col1:
@@ -84,7 +84,6 @@ def main() -> None:
         2. Bandeau d'invitation à la connexion (si non connecté).
         3. Bloc hero (logo + titre + description).
         4. Cartes de navigation.
-        5. Bloc des derniers résultats.
     """
 
     # Injection des styles CSS de la page

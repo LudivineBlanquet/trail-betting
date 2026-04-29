@@ -11,6 +11,7 @@ Contenu :
 
 # LIBRAIRIES ----------------------------
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.stylable_container import stylable_container
 import plotly.express as px
@@ -142,51 +143,123 @@ def afficher_classement_general() -> None:
     Affiche le tableau du classement général de tous les participants.
     """
 
-    st.markdown(
-        f"""
-        <div style="font-size: 16px; font-weight: bold; font-family: system-ui; margin-bottom: 8px; color: #000000">
-        Classement général :
-        </div>
-        """,
-        unsafe_allow_html = True
-    )
-    
-    add_vertical_space(1)
-
-
     df = get_classement_general()
     if df.empty:
         st.info("Le classement est vide pour le moment. Sois le premier à parier !")
         return
 
-    # Sélection et renommage des colonnes pour l'affichage
-    df_affichage = df[["rang", "pseudo", "points_total", "nb_paris_scores", "nb_paris", "taux_reussite"]]
+    # Préparer les données
+    df_clean = df[["rang", "pseudo", "points_total", "nb_paris_scores", "nb_paris", "taux_reussite"]].copy()
+    rows_json = df_clean.to_json(orient = "records", force_ascii = False)
 
-    # Formatage du rang pour le podium
-    df_affichage["rang"] = df_affichage["rang"].apply(format_rang)
+    html = f"""
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: system-ui; color: var(--color-text-primary); }}
+        .toolbar {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }}
+        .toolbar-title {{ font-size: 15px; font-style: italic; color: #888; }}
+        input[type=search] {{ font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 0.5px solid #ccc; width: 200px; outline: none; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+        thead th {{ padding: 8px 12px; text-align: left; font-weight: 500; font-size: 12px; color: #888; border-bottom: 0.5px solid #eee; cursor: pointer; user-select: none; white-space: nowrap; }}
+        thead th:hover {{ color: #333; }}
+        .sort-icon {{ margin-left: 4px; opacity: 0.4; font-size: 10px; }}
+        thead th.sorted .sort-icon {{ opacity: 1; }}
+        tbody tr {{ border-bottom: 0.5px solid #f0f0f0; transition: background 0.1s; }}
+        tbody tr:hover {{ background: #fafafa; }}
+        tbody tr:last-child {{ border-bottom: none; }}
+        td {{ padding: 6px 12px; vertical-align: middle; }}
+        .rang {{ font-size: 16px; width: 36px; display: inline-block; text-align: center; }}
+        .pseudo {{ font-weight: 500; }}
+        .points {{ font-weight: 600; color: #185FA5; }}
+        .paris-cell {{ font-size: 12px; color: #555; }}
+        .progress-wrap {{ display: flex; align-items: center; gap: 8px; }}
+        .progress-bar {{ flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; min-width: 60px; }}
+        .progress-fill {{ height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4caf50, #81c784); transition: width 0.4s ease; }}
+        .progress-label {{ font-size: 12px; color: #555; white-space: nowrap; }}
+    </style>
 
-    # Formatage du nombre de paris : "3 / 5"
-    df_affichage["paris"] = (df_affichage["nb_paris_scores"].astype(str) + " / " + df_affichage["nb_paris"].astype(str))
+    <div style="padding: 1rem 0; max-height: 400px; overflow-y: auto;">
+        <div class="toolbar">
+            <span class="toolbar-title">Classement général :</span>
+            <input type="search" id="search" placeholder="Rechercher..." oninput="render()">
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sort('rang')" id="h-rang">Rang <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('pseudo')" id="h-pseudo">Pseudo <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('points_total')" id="h-points_total">Points <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('nb_paris')" id="h-nb_paris">Paris scorés <span class="sort-icon">↕</span></th>
+                    <th onclick="sort('taux_reussite')" id="h-taux_reussite">Réussite (%) <span class="sort-icon">↕</span></th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
 
-    df_affichage = df_affichage[["rang", "pseudo", "points_total", "paris", "taux_reussite"]
-    ].rename(columns = {
-        "rang": "Rang",
-        "pseudo": "Pseudo",
-        "points_total": "Points",
-        "paris": "Paris scorés",
-        "taux_reussite": "Réussite (%)"
-    })
+    <script>
+        const data = {rows_json};
 
-    st.dataframe(df_affichage, width = 'stretch', hide_index = True,
-        column_config = {
-            "Réussite (%)": st.column_config.ProgressColumn(
-                label = "Réussite (%)",
-                min_value = 0,
-                max_value = 100,
-                format = "%d%%",
-            )
-        }
-    )
+        const PODIUM = {{ 1: "🥇", 2: "🥈", 3: "🥉" }};
+
+        const formatRang = r => PODIUM[r] ? `<span class="rang">${{PODIUM[r]}}</span>` : `<span class="rang" style="font-size:13px;color:#888">#${{r}}</span>`;
+
+        let sortKey = "rang", sortDir = 1;
+
+        function sort(key) {{
+            if (sortKey === key) sortDir *= -1;
+            else {{ sortKey = key; sortDir = 1; }}
+            document.querySelectorAll("thead th").forEach(th => th.classList.remove("sorted"));
+            document.getElementById("h-" + key)?.classList.add("sorted");
+            render();
+        }}
+
+        function render() {{
+            const q = document.getElementById("search").value.toLowerCase();
+            let rows = data.filter(r =>
+                (r.pseudo || "").toLowerCase().includes(q)
+            );
+            rows.sort((a, b) => {{
+                const av = a[sortKey] ?? "", bv = b[sortKey] ?? "";
+                return av < bv ? -sortDir : av > bv ? sortDir : 0;
+            }});
+            const tbody = document.getElementById("tbody");
+            if (!rows.length) {{
+                tbody.innerHTML = `<tr><td colspan="5" style="padding:16px;text-align:center;color:#aaa;font-size:13px;">Aucun résultat</td></tr>`;
+                return;
+            }}
+            tbody.innerHTML = rows.map(r => {{
+                const taux = r.taux_reussite ?? 0;
+                const paris = `${{r.nb_paris_scores}} / ${{r.nb_paris}}`;
+                return `
+                    <tr>
+                        <td>${{formatRang(r.rang)}}</td>
+                        <td class="pseudo">${{r.pseudo}}</td>
+                        <td class="points">${{r.points_total}}</td>
+                        <td class="paris-cell">${{paris}}</td>
+                        <td>
+                            <div class="progress-wrap">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width:${{taux}}%"></div>
+                                </div>
+                                <span class="progress-label">${{taux}}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }}).join("");
+        }}
+
+        render();
+    </script>
+    """
+
+    row_height = 50 # hauteur par ligne en px
+    header_height = 100 # toolbar + thead
+    max_height = 360 # plafond
+    height = min(header_height + len(df_clean) * row_height, max_height)
+
+    components.html(html, height = height, scrolling = True)
 
 
 # MAIN
